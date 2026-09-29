@@ -2614,7 +2614,7 @@ html[data-theme="dark"] #peakReview input[type="checkbox"]::after{box-shadow:0 1
 <style id="worked-session-badge-style">
 #workedSessionBadge{position:fixed;right:18px;bottom:18px;z-index:9998;padding:9px 12px;border-radius:999px;background:var(--panel,#fff);border:1px solid var(--border,#d7dfda);box-shadow:0 5px 20px rgba(0,0,0,.12);font-size:.78rem;font-weight:800;letter-spacing:.03em}
 </style>
-<div id="workedSessionBadge">WORKED SESSION · REAL GROUP 09 DATA</div>
+<div id="workedSessionBadge">WORKED SESSION · SUBMITTED CHROMATOGRAM SERIES</div>
 
 <script id="worked-session-autoload">
 (()=>{
@@ -2629,7 +2629,7 @@ html[data-theme="dark"] #peakReview input[type="checkbox"]::after{box-shadow:0 1
       'worked-session/GR09-14-4-ACN-3-ISO-35-1.5-20u-CP-0.1-C18aqP-150x4.6x5-amb-254.csv',
       'worked-session/GR09-15-4-ACN-3-ISO-35-1.5-20u-CP-0.1-C18aqP-150x4.6x5-T40-254.csv',
       'worked-session/GR09-16-4-ACN-3-ISO-35-1.5-20u-CP-0.1-C18aqP-150x4.6x5-T60-254.csv',
-      'GR11-16-6-MeOH-3-ISO-50-1.5-20u-CP-0.1-BiPH-150x4.6x5-amb-254.csv'
+      'worked-session/GR11-16-6-MeOH-3-ISO-50-1.5-20u-CP-0.1-BiPH-150x4.6x5-amb-254.csv'
   ];
   const WORKED_SPECS={target:'7',maxTR:'15',minRS:'1.4',maxBP:'4000',startSolvent:'ACN',specPeakFilterMode:'height',specHeightThreshold:'10000'};
 
@@ -2659,7 +2659,7 @@ html[data-theme="dark"] #peakReview input[type="checkbox"]::after{box-shadow:0 1
       uploadedFiles=loaded;
       await rebuildUploads();
       if(typeof window.hplcFillAllUploadedRuns==='function') await window.hplcFillAllUploadedRuns();
-      if(status) status.textContent=`WORKED SESSION — ${loaded.length} real Group 09 chromatogram CSVs loaded from this repository.`;
+      if(status) status.textContent=`WORKED SESSION — ${loaded.length} chromatogram CSVs loaded from this repository.`;
       document.dispatchEvent(new Event('hplc-import-ready'));
     }catch(err){
       if(status) status.textContent='Worked-session files could not be auto-loaded. Open this page through GitHub Pages (not as a local file), or upload the CSVs manually. '+err.message;
