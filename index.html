@@ -2584,55 +2584,8 @@ html[data-theme="dark"] #peakReview input[type="checkbox"]::after{box-shadow:0 1
 </script>
 
 
-<script id="github-worked-session-autoload">
-/* Worked edition: import real repository files through the existing upload pipeline. */
-(()=>{
- 'use strict';
- const owner='celerku', repo='36094560_HPLC-Tool_Worked', branch='main';
- const folder='worked-session/';
- const supported=/\.(csv|txt|pdf|xlsx|xls|xlsm)$/i;
- const status=document.createElement('p');
- status.id='githubWorkedLoadStatus';status.className='small';
- status.setAttribute('role','status');
- const input=document.getElementById('csv');
- if(!input)return;
- input.insertAdjacentElement('afterend',status);
- const setStatus=t=>{status.textContent=t;};
- async function load(){
-  setStatus('Loading worked-session experimental files from GitHub…');
-  try{
-   const api=`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
-   const response=await fetch(api,{headers:{Accept:'application/vnd.github+json'}});
-   if(!response.ok)throw Error('GitHub file listing HTTP '+response.status);
-   const tree=await response.json();
-   if(tree.truncated)throw Error('GitHub returned an incomplete file listing');
-   const entries=(tree.tree||[]).filter(x=>x.type==='blob'&&x.path.startsWith(folder)&&supported.test(x.path));
-   if(!entries.length)throw Error('No supported experimental files found in worked-session/');
-   const files=[];const failures=[];
-   for(const entry of entries){
-    try{
-     const url=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${entry.path.split('/').map(encodeURIComponent).join('/')}`;
-     const r=await fetch(url);
-     if(!r.ok)throw Error('HTTP '+r.status);
-     const blob=await r.blob();
-     files.push(new File([blob],entry.path.split('/').pop(),{type:blob.type||'application/octet-stream',lastModified:0}));
-    }catch(e){failures.push(entry.path+': '+e.message);}
-   }
-   if(!files.length)throw Error('No experimental files could be downloaded');
-   const transfer=new DataTransfer();files.forEach(f=>transfer.items.add(f));
-   input.files=transfer.files;
-   input.dispatchEvent(new Event('change',{bubbles:true}));
-   setStatus(`Imported ${files.length} repository file(s) into the existing analysis workflow.${failures.length?' '+failures.length+' file(s) failed to download.':''} Check run history and review flagged values.`);
-   if(failures.length){console.warn('GitHub worked file download failures:',failures);}
-  }catch(e){
-   setStatus('GitHub automatic import unavailable: '+e.message+'. You can still upload experimental files manually.');
-   console.warn('GitHub worked-session auto-loader:',e);
-  }
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
-})();
-</script>
-</body></html>
+
+
 
 <style id="fc1-required-style">
 .fc1-invalid{outline:2px solid #c62828!important;outline-offset:2px;border-color:#c62828!important}
@@ -3370,3 +3323,42 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #flowPage1 .spec-layout>.spec-panel:focus-within,#flowPage1 .spec-layout>#v12SolventChoice:focus-within{border-color:var(--ui-accent,#6c92e6)!important;box-shadow:0 0 0 3px rgba(108,146,230,.16)!important}
 @media(prefers-reduced-motion:reduce){#flowPage1 .spec-layout>.spec-panel,#flowPage1 .spec-layout>#v12SolventChoice{transition:none!important}#flowPage1 .spec-layout>.spec-panel:hover,#flowPage1 .spec-layout>#v12SolventChoice:hover{transform:none!important}}
 </style>
+<script id="github-worked-session-autoload-fixed">
+(()=>{
+ 'use strict';
+ const owner='celerku',repo='36094560_HPLC-Tool_Worked',folder='worked-session/';
+ const input=document.getElementById('csv');if(!input)return;
+ const status=document.createElement('p');status.id='githubWorkedLoadStatus';status.className='small';status.setAttribute('role','status');input.after(status);
+ const say=x=>status.textContent=x;
+ async function start(){
+  if(location.protocol==='file:'){say('Automatic GitHub loading runs on the published GitHub Pages site.');return;}
+  say('Loading worked-session files from GitHub…');
+  try{
+   let response=await fetch(`https://api.github.com/repos/${owner}/${repo}`,{cache:'no-store'});
+   if(!response.ok)throw Error('Repository lookup HTTP '+response.status);
+   const info=await response.json(),branch=info.default_branch||'main';
+   response=await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,{cache:'no-store'});
+   if(!response.ok)throw Error('File listing HTTP '+response.status);
+   const tree=await response.json();if(tree.truncated)throw Error('GitHub file list is incomplete');
+   const entries=(tree.tree||[]).filter(x=>x.type==='blob'&&x.path.startsWith(folder)&&/\.(csv|txt|pdf|xlsx|xls|xlsm)$/i.test(x.path));
+   if(!entries.length)throw Error('No supported experimental files in '+folder);
+   const files=[],errors=[];
+   for(const entry of entries){
+    try{const url=`https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/${entry.path.split('/').map(encodeURIComponent).join('/')}`;
+     const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
+     const blob=await r.blob();files.push(new File([blob],entry.path.split('/').pop(),{type:blob.type||'application/octet-stream',lastModified:0}));
+    }catch(e){errors.push(entry.path+': '+e.message);}
+   }
+   if(!files.length)throw Error('All file downloads failed: '+errors.join('; '));
+   const finished=new Promise(resolve=>{document.addEventListener('hplc-import-ready',resolve,{once:true});});
+   const transfer=new DataTransfer();for(const f of files)transfer.items.add(f);
+   input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+   await finished;
+   say(`Loaded ${files.length} experimental file(s) from GitHub${errors.length?'; '+errors.length+' failed':''}. Review the imported runs and decisions.`);
+   if(errors.length)console.warn('Worked-session file errors',errors);
+  }catch(e){say('GitHub auto-load failed: '+e.message+'. Manual upload is still available.');console.error('Worked-session auto-load',e);}
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+</body></html>
